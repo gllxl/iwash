@@ -10,7 +10,6 @@
         control-color="white"
         navigation
         padding
-        arrows
         height="200px"
         class="bg-primary text-white shadow-1 rounded-borders"
       >
@@ -40,9 +39,32 @@
         </q-carousel-slide>
       </q-carousel>
       <q-card class="my-card">
-        <q-card-section>
+        <q-card-section v-if="!device.device_id">
           当前机器：未选择
         </q-card-section>
+
+        <q-card-section v-else class="q-pa-none">
+          <q-item clickable v-ripple class="q-py-none">
+            <q-item-section avatar class="items-center">
+              <div class="flex-center" style="height: 40%">
+                当前机器：
+              </div>
+              <q-avatar rounded>
+                <q-icon size="2rem" color="primary" name="mdi-washing-machine"/>
+              </q-avatar>
+            </q-item-section>
+
+            <q-item-section class="q-ml-lg">
+              <q-item-label>
+                {{device.device_id}}
+              </q-item-label>
+              <q-item-label caption>
+                {{device.device_name}}
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+        </q-card-section>
+
       </q-card>
       <q-stepper
         v-model="step"
@@ -59,7 +81,7 @@
           扫码选择机器，若机器二维码损坏请到设置反馈
 
           <q-stepper-navigation>
-            <q-btn @click="step = 2" color="primary" label="扫码"/>
+            <q-btn @click="chooseDevice()" color="primary" label="扫码"/>
           </q-stepper-navigation>
         </q-step>
 
@@ -72,7 +94,7 @@
         >
 
           <div class="flex q-gutter-sm row">
-            <q-field class="col-5" standout="bg-primary text-white" stack-label label="毛巾" @focus="choose_price(2)">
+            <q-field class="col-5" standout="bg-primary text-white" stack-label label="毛巾" @focus="choosePrice(2)">
               <template v-slot:prepend>
                 <q-icon>
                   <svg t="1587893711376" class="icon" viewBox="0 0 1024 1024" version="1.1"
@@ -88,7 +110,7 @@
               </template>
             </q-field>
 
-            <q-field class="col-5" standout="bg-primary text-white" stack-label label="小件衣物" @focus="choose_price(3)">
+            <q-field class="col-5" standout="bg-primary text-white" stack-label label="小件衣物" @focus="choosePrice(3)">
               <template v-slot:prepend>
                 <q-icon color="bg-white">
                   <svg t="1587893565424" class="icon" viewBox="0 0 1024 1024" version="1.1"
@@ -106,7 +128,7 @@
                 <div class="self-center full-width no-outline" tabindex="0">￥3.00</div>
               </template>
             </q-field>
-            <q-field class="col-5" standout="bg-primary text-white" stack-label label="大件衣物" @focus="choose_price(4)">
+            <q-field class="col-5" standout="bg-primary text-white" stack-label label="大件衣物" @focus="choosePrice(4)">
               <template v-slot:prepend>
                 <q-icon>
                   <svg t="1587893651783" class="icon" viewBox="0 0 1175 1024" version="1.1"
@@ -121,7 +143,7 @@
                 <div class="self-center full-width no-outline" tabindex="0">￥4.00</div>
               </template>
             </q-field>
-            <q-field class="col-5" standout="bg-primary text-white" stack-label label="床单被套" @focus="choose_price(5)">
+            <q-field class="col-5" standout="bg-primary text-white" stack-label label="床单被套" @focus="choosePrice(5)">
               <template v-slot:prepend>
                 <q-icon>
                   <svg t="1587893798711" class="icon" viewBox="0 0 1024 1024" version="1.1"
@@ -147,10 +169,12 @@
           disable
         >
           <div class="flex row q-gutter-sm">
-            <q-btn outline dense color="green" style="width: 45%" icon="img:statics/index_icons/pay_1.svg" >
+            <q-btn :loading="loading.wx_pay" outline dense color="green" style="width: 44%" @click="wxPay()"
+                   icon="img:statics/index_icons/pay_1.svg">
               <span class="q-pl-sm">微信支付</span>
             </q-btn>
-            <q-btn outline color="primary" icon="mdi-wallet" style="width: 46%">
+            <q-btn :loading="loading.wallet_pay" outline color="primary" icon="mdi-wallet" style="width: 45%"
+                   @click="walletPay()">
               <span class="q-pl-sm">钱包支付</span>
             </q-btn>
           </div>
@@ -161,6 +185,9 @@
 </template>
 
 <script>
+  import axios from 'axios'
+
+  const Qs = require('qs');
   export default {
     name: 'PageIndex',
     data() {
@@ -168,18 +195,109 @@
         slide: 'style',
         lorem: 'test.',
         step: 1,
-        model: 'one',
-        step2_title:'选择模式'
+        model: null,
+        show: true,
+        step2_title: '选择模式',
+        device: {
+          device_id: null,
+          device_name: null,
+        },
+        loading: {
+          wx_pay: false,
+          wallet_pay: false
+        }
       }
-    }, methods: {
-      choose_price(price) {
+    },
+    created() {
+      if (this.$store.state.device_info.device_id) {
+        this.step = 2;
+        this.device = this.$store.state.device_info;
+        this.device.device_name = this.$store.state.dorm.washingMachineDorm;
+      }
+    },
+    methods: {
+      chooseDevice() {
+        let that = this;
+        that.step = 2;
+        that.device = {
+          device_id: 1,
+          device_name: '洗衣机'
+        };
+      },
+      choosePrice(price) {
         let that = this;
         console.log(price);
+        that.model = price;
         setTimeout(function () {
             that.step = 3;
-            that.step2_title = '已选择￥'+price
+            that.step2_title = '已选择￥' + price
           }, 100
-        )},
+        )
+      },
+      wxPay() {
+        let that = this;
+        this.loading.wx_pay = true;
+        axios.post(this.$store.state.url_paths.washBegin, Qs.stringify({
+          token: that.$store.state.user_info.access_token,
+          washing_machine_identification: that.$store.state.device_info.device_id,
+          state: that.model,
+        }))
+          .then(function (response) {
+            that.loading.wx_pay = false;
+            if (response.data.code === 200) {
+              that.$q.notify({
+                type: 'negative',
+                color: 'green',
+                position: 'top',
+                message: '启动成功',
+              })
+            } else {
+              that.$q.notify({
+                type: 'negative',
+                color: 'red',
+                position: 'top',
+                message: '启动失败,' + response.data.response.msg,
+              })
+            }
+          })
+      },
+      walletPay() {
+        let that = this;
+        this.loading.wallet_pay = true;
+        axios.post(this.$store.state.url_paths.washBegin, Qs.stringify({
+          token: that.$store.state.user_info.access_token,
+          washing_machine_identification: that.$store.state.device_info.device_id,
+          state: that.model - 1,
+        }))
+          .then(function (response) {
+            that.loading.wallet_pay = false;
+            if (response.data.code === 200) {
+              that.$q.notify({
+                type: 'negative',
+                color: 'green',
+                position: 'top',
+                message: '启动成功',
+              })
+            } else {
+              that.$q.notify({
+                type: 'negative',
+                color: 'red',
+                position: 'top',
+                message: '启动失败',
+              })
+            }
+          })
+      }
     }
   }
 </script>
+<style>
+  .fade-enter-active, .fade-leave-active {
+    transition: opacity .5s;
+  }
+
+  .fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */
+  {
+    opacity: 0;
+  }
+</style>

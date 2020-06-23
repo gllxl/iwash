@@ -6,9 +6,9 @@
           <div class="waveWrapper waveAnimation">
             <div class="userinfo">
               <q-avatar size="64px">
-                <img src="https://cdn.quasar.dev/img/avatar.png">
+                <img :src="$store.state.user_info.headimgurl">
               </q-avatar>
-              <div class="text-white q-mt-sm">aura</div>
+              <div class="text-white q-mt-sm">{{$store.state.user_info.nickname}}</div>
             </div>
             <div class="waveWrapperInner bgTop">
               <div class="wave waveTop"></div>
@@ -34,7 +34,7 @@
               </q-item-section>
             </q-item>
             <q-separator inset color="gery"></q-separator>
-            <q-item clickable v-ripple>
+            <q-item clickable v-ripple @click="$router.push('order_list')">
               <q-item-section avatar>
                 <q-icon name="mdi-format-list-bulleted-square" />
               </q-item-section>
