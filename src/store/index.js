@@ -14,7 +14,6 @@ Vue.use(Vuex);
  * with the Store instance.
  */
 export default function (/* { ssrContext } */) {
-  const hostname = 'http://woju.chinaqwe.top:4321/';
   const Store = new Vuex.Store({
     modules: {
       // example
@@ -29,12 +28,8 @@ export default function (/* { ssrContext } */) {
         device_id: null,
         device_name: '洗衣机',
       },
-      url_paths: {
-        getCode: hostname + 'getCode',
-        washBegin: hostname + 'washBegin',
-        findOrderByToken: hostname + 'findOrderByToken',
-      }
     },
+
     mutations: {
       getCode(state, code) {
         state.code = code;

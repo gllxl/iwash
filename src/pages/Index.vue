@@ -174,7 +174,7 @@
               <span class="q-pl-sm">微信支付</span>
             </q-btn>
             <q-btn :loading="loading.wallet_pay" outline color="primary" icon="mdi-wallet" style="width: 45%"
-                   @click="walletPay()">
+                   @click="wxPay()">
               <span class="q-pl-sm">钱包支付</span>
             </q-btn>
           </div>
@@ -185,11 +185,9 @@
 </template>
 
 <script>
-  import axios from 'axios'
 
-  const Qs = require('qs');
   export default {
-    name: 'PageIndex',
+    name: 'Index',
     data() {
       return {
         slide: 'style',
@@ -234,60 +232,32 @@
           }, 100
         )
       },
-      wxPay() {
-        let that = this;
+      wxPay: function () {
         this.loading.wx_pay = true;
-        axios.post(this.$store.state.url_paths.washBegin, Qs.stringify({
-          token: that.$store.state.user_info.access_token,
-          washing_machine_identification: that.$store.state.device_info.device_id,
-          state: that.model,
-        }))
-          .then(function (response) {
-            that.loading.wx_pay = false;
-            if (response.data.code === 200) {
-              that.$q.notify({
+        this.$api.device.washBegin(this.$store.state.user_info.access_token, this.$store.state.device_info.device_id, this.model)
+          .then(res => {
+            this.loading.wx_pay = false;
+            if (res.data.code === 200) {
+              this.$q.notify({
                 type: 'negative',
                 color: 'green',
                 position: 'top',
                 message: '启动成功',
               })
             } else {
-              that.$q.notify({
+              this.$q.notify({
                 type: 'negative',
                 color: 'red',
                 position: 'top',
-                message: '启动失败,' + response.data.response.msg,
+                message: '启动失败,' + res.data.response.msg,
               })
             }
           })
+          .catch(error => {
+            console.log(error)
+          });
       },
-      walletPay() {
-        let that = this;
-        this.loading.wallet_pay = true;
-        axios.post(this.$store.state.url_paths.washBegin, Qs.stringify({
-          token: that.$store.state.user_info.access_token,
-          washing_machine_identification: that.$store.state.device_info.device_id,
-          state: that.model - 1,
-        }))
-          .then(function (response) {
-            that.loading.wallet_pay = false;
-            if (response.data.code === 200) {
-              that.$q.notify({
-                type: 'negative',
-                color: 'green',
-                position: 'top',
-                message: '启动成功',
-              })
-            } else {
-              that.$q.notify({
-                type: 'negative',
-                color: 'red',
-                position: 'top',
-                message: '启动失败',
-              })
-            }
-          })
-      }
+
     }
   }
 </script>

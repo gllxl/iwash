@@ -54,14 +54,11 @@
 
 
 <script>
-  import axios from "axios";
-
-  const Qs = require('qs');
   export default {
     data() {
       return {
         expanded: false,
-        iSorder_list : false,
+        iSorder_list: false,
         order_list: []
       }
     },
@@ -69,15 +66,13 @@
       this.getOrder()
     },
     methods: {
-      getOrder() {
+      getOrder: function () {
         let that = this;
-        axios.post(that.$store.state.url_paths.getOrder, Qs.stringify({
-          access_token: that.$store.state.user_info.access_token
-        }))
-          .then(function (response) {
-            if (response.data.code === 200) {
-              that.order_list = response.data.data.OrderInfo;
-              if (response.data.data.OrderInfo.length !== 0)
+        this.$api.user.findOrderByToken(this.access_token)
+          .then((res) => {
+            if (res.data.code === 200) {
+              that.order_list = res.data.data.OrderInfo;
+              if (res.data.data.OrderInfo.length !== 0)
                 that.iSorder_list = true;
               console.log(that.order_list)
             }

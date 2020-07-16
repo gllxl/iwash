@@ -8,23 +8,20 @@
         style="margin: auto auto "
       />
     </div>
-<!--    <img alt="Snack Box" width="128px" style="margin-top: -470px" src="statics/logo.png">-->
+    <!--    <img alt="Snack Box" width="128px" style="margin-top: -470px" src="statics/logo.png">-->
   </q-page>
 </template>
 
 <script>
 
-  import axios from 'axios'
-
-  const Qs = require('qs');
   export default {
-    name: 'PageName',
+    name: 'Author',
     data() {
       return {
         log: '',
         device_info: {
           device_id: null,
-          device_name : null,
+          device_name: null,
         }
       }
     },
@@ -39,23 +36,20 @@
           that.login()
         }
       } else {
-        that.$q.notify( '请使用微信登录')
+        that.$q.notify('请使用微信登录')
       }
-    }, methods: {
-      login() {
-        let that = this;
-        // 通过cookie中保存的token 获取用户信息
-        axios.post(this.$store.state.url_paths.getCode, Qs.stringify({
-          code: that.$store.state.code,
-          device_id: that.$store.state.device_info.device_id,
-        }))
-          .then(function (response) {
-            if (response.data.code === 200) {
-              that.$store.commit('getUserInfo', response.data.data.userInfo);
-              that.$store.commit('getDormInfo', response.data.data.dorm);
-              that.$router.push('/');
-            }
+    },
+    methods: {
+      login: function () {
+        this.$api.user.getCode(this.$store.state.code, this.$store.state.device_info.device_id)
+          .then(res => {
+            this.$store.commit('getUserInfo', res.data.data.userInfo);
+            this.$store.commit('getDormInfo', res.data.data.dorm);
+            this.$router.push('/');
           })
+          .catch(error => {
+            console.log(error)
+          });
       },
     }
   }
